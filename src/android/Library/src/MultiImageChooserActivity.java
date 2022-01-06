@@ -609,15 +609,7 @@ public class MultiImageChooserActivity extends AppCompatActivity implements
                 setResult(RESULT_CANCELED, data);
 
             } else if (al.size() > 0) {
-                Bundle res = new Bundle();
-                res.putStringArrayList("MULTIPLEFILENAMES", al);
-
-                if (imagecursor != null) {
-                    res.putInt("TOTALFILES", imagecursor.getCount());
-                }
-
-                int sync = ResultIPC.get().setLargeData(res);
-                data.putExtra("bigdata:synccode", sync);
+                data.putStringArrayListExtra("MULTIPLEFILENAMES",  al);
                 setResult(RESULT_OK, data);
 
             } else {
