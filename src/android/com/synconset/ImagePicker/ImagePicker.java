@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import androidx.core.content.ContextCompat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -42,8 +43,13 @@ public class ImagePicker extends CordovaPlugin {
             return true;
 
         } else if (ACTION_REQUEST_READ_PERMISSION.equals(action)) {
-            if (!hasReadPermission())
-                requestReadPermission(null);
+            if (!hasReadPermission()) {
+                if (Build.VERSION.SDK_INT < 33) {
+                    cordova.requestPermissions(this, PERMISSION_REQUEST_CODE, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE});
+                } else {
+                    cordova.requestPermissions(this, PERMISSION_REQUEST_CODE, new String[]{Manifest.permission.READ_MEDIA_IMAGES});
+                }
+            }
             return true;
 
         } else if (ACTION_GET_PICTURES.equals(action)) {
@@ -91,7 +97,7 @@ public class ImagePicker extends CordovaPlugin {
      */
     @SuppressLint("InlinedApi")
     private boolean hasReadPermission() {
-        return Build.VERSION.SDK_INT < 23 || this.cordova.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
+        return Build.VERSION.SDK_INT < 23 || PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(cordova.getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) || PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(cordova.getActivity(), Manifest.permission.READ_MEDIA_IMAGES);
     }
 
     /**
