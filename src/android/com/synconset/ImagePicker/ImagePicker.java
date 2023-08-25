@@ -44,6 +44,9 @@ public class ImagePicker extends CordovaPlugin {
 
         } else if (ACTION_REQUEST_READ_PERMISSION.equals(action)) {
             if (!hasReadPermission()) {
+                // fix android 13 permission issue
+                // https://yoobic.atlassian.net/browse/YD-15848
+                // https://github.com/Telerik-Verified-Plugins/ImagePicker/issues/264
                 if (Build.VERSION.SDK_INT < 33) {
                     cordova.requestPermissions(this, PERMISSION_REQUEST_CODE, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE});
                 } else {
