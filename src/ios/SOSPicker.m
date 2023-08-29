@@ -40,7 +40,7 @@ typedef enum : NSUInteger {
     if (status == PHAuthorizationStatusAuthorized) {
         NSLog(@"Access has been granted.");
         
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } else if (status == PHAuthorizationStatusDenied) {
         NSString* message = @"Access has been denied. Change your setting > this app > Photo enable";
@@ -49,11 +49,27 @@ typedef enum : NSUInteger {
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     } else if (status == PHAuthorizationStatusNotDetermined) {
-        // Access has not been determined. requestAuthorization: is available
-        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {}];
-        
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        // Access has not been determined. requestAuthorization: is available, ask.
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            if (status == PHAuthorizationStatusAuthorized) {
+                NSLog(@"Access has been granted.");
+
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:true];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else if (status == PHAuthorizationStatusDenied) {
+                NSString* message = @"Access has been denied. Change your setting > this app > Photo enable";
+                NSLog(@"%@", message);
+
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else if (status == PHAuthorizationStatusRestricted) {
+                NSString* message = @"Access has been restricted. Change your setting > Privacy > Photo enable";
+                NSLog(@"%@", message);
+
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:message];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            }
+        }];
     } else if (status == PHAuthorizationStatusRestricted) {
         NSString* message = @"Access has been restricted. Change your setting > Privacy > Photo enable";
         NSLog(@"%@", message);
@@ -84,10 +100,15 @@ typedef enum : NSUInteger {
     [self launchGMImagePicker:allow_video title:title message:message disable_popover:disable_popover maximumImagesCount:maximumImagesCount];
 }
 
+- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController {
+    [self assetsPickerControllerDidCancel:nil];
+}
+
 - (void)launchGMImagePicker:(bool)allow_video title:(NSString *)title message:(NSString *)message disable_popover:(BOOL)disable_popover maximumImagesCount:(NSInteger)maximumImagesCount
 {
     GMImagePickerController *picker = [[GMImagePickerController alloc] init:allow_video];
     picker.delegate = self;
+    picker.presentationController.delegate = self;
     picker.maximumImagesCount = maximumImagesCount;
     picker.title = title;
     picker.customNavigationBarPrompt = message;
